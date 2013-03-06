@@ -205,7 +205,7 @@
 			stage.removeEventListener(MouseEvent.MOUSE_UP, stopDraggPonto);
 			draggingPoint.stopDrag();
 			
-			if (fundoGrafico.hitTestPoint(draggingPoint.x, draggingPoint.y)) {
+			if (fundoGrafico.hitTestPoint(draggingPoint.x + graph.x, draggingPoint.y + graph.y)) {
 				var posGraph:Point = new Point(draggingPoint.x, draggingPoint.y);
 				var posX:Number = graph.pixel2x(posGraph.x);
 				var posY:Number = graph.pixel2y(posGraph.y);
@@ -216,7 +216,8 @@
 			}else {
 				graph.removePoint(draggingPoint);
 				pontosGrafico.splice(pontosGrafico.indexOf(draggingPoint), 1);
-				graph.removeChild(draggingPoint);
+				//graph.removeChild(draggingPoint);
+				draggingPoint.related.visible = true;
 				draggingPoint = null;
 			}
 			
