@@ -1,0 +1,3 @@
+h1. Função polinomial do segundo grau
+
+Neste recurso educacional são exibidos, no plano cartesiano, o gráfico de duas funções polinomiais do segundo grau, com valores de _a_ e _b_ escolhidos aleatoriamente pelo software. A tarefa do usuário é determinar esses valores inserindo pontos no gráfico (máximo/mínimo e raizes).
