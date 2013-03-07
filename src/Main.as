@@ -68,14 +68,16 @@
 			concavidade = new ComboBox();
 			concavidade.x = 165;
 			concavidade.y = 515;
-			concavidade.addItem( {label:"Para cima", data:1 } );
-			concavidade.addItem( {label:"Para baixo", data:2 } );
+			concavidade.addItem( {label:"Selecione...", data:-1 } );
+			concavidade.addItem( {label:"Para cima", data:"cima" } );
+			concavidade.addItem( {label:"Para baixo", data:"baixo" } );
 			
 			vertice = new ComboBox();
 			vertice.x = 165;
 			vertice.y = 550;
-			vertice.addItem( {label:"Máximo", data:1 } );
-			vertice.addItem( {label:"Mínimo", data:2 } );
+			vertice.addItem( {label:"Selecione...", data:-1 } );
+			vertice.addItem( {label:"Máximo", data:"maximo" } );
+			vertice.addItem( {label:"Mínimo", data:"minimo" } );
 			
 			layerAtividade.addChild(concavidade);
 			layerAtividade.addChild(vertice);
@@ -115,8 +117,8 @@
 			//graph.buttonMode = true;
 			graph.addEventListener("initPan", startPan);
 			graph.setAxesNameFormat(new TextFormat("arial", 12, 0x000000));
-			graph.setAxisName(SimpleGraph.AXIS_X, "x");
-			graph.setAxisName(SimpleGraph.AXIS_Y, "Y");
+			graph.setAxisName(SimpleGraph.AXIS_X, "t");
+			graph.setAxisName(SimpleGraph.AXIS_Y, "s");
 			
 			layerAtividade.addChild(graph);
 			graph.draw();
@@ -137,6 +139,11 @@
 		{
 			graph.pan = !graph.pan;
 			graph.buttonMode = graph.pan;
+			
+			for each (var item:SimplePoint in pontosGrafico) 
+			{
+				item.buttonMode = !graph.pan;
+			}
 			
 			if (graph.pan) {
 				panButton.gotoAndStop(2);
@@ -194,6 +201,7 @@
 		private var draggingPoint:SimplePoint;
 		private function initDragPonto(e:MouseEvent):void 
 		{
+			if (finalizado) return;
 			if (graph.pan) return;
 			draggingPoint = SimplePoint(e.target);
 			stage.addEventListener(MouseEvent.MOUSE_UP, stopDraggPonto);
@@ -226,6 +234,7 @@
 		private var dragging:MovieClip;
 		private function initDrag(e:MouseEvent):void 
 		{
+			if (finalizado) return;
 			dragging = MovieClip(e.target);
 			stage.addEventListener(MouseEvent.MOUSE_UP, stopDragg);
 			dragging.startDrag();
@@ -245,6 +254,7 @@
 				var g:SimplePoint = new SimplePoint(posX, posY, pt);
 				g.mouseChildren = false;
 				g.addEventListener(MouseEvent.MOUSE_DOWN, initDragPonto);
+				if (!graph.pan) g.buttonMode = true;
 				pontosGrafico.push(g);
 				g.related = dragging;
 				graph.addPoint(g);
@@ -277,6 +287,7 @@
 			if (func != null) graph.removeFunction(func);
 			
 			func = getFunction(ordem[index]);
+			resposta.caso = ordem[index];
 			index++;
 			if (index >= ordem.length) index = 0;
 			
@@ -289,10 +300,12 @@
 			//unlock(finalizaVermelha);
 		}
 		
+		private var resposta:Object = new Object();
+		
 		private function getFunction(caso:int):GraphFunction 
 		{
-			var x0:Number;
-			var x1:Number;
+			var x0:Number = NaN;
+			var x1:Number = NaN;
 			var xv:Number;
 			var yv:Number;
 			var a:Number;
@@ -329,6 +342,12 @@
 			b = -2 * a * xv;
 			c = yv + (a * xv * xv);
 			
+			resposta.x0 = x0;
+			resposta.x1 = x1;
+			resposta.yv = yv;
+			resposta.xv = xv;
+			resposta.a = a;
+			
 			var f:Function = function(x:Number):Number {
 				return a * Math.pow(x, 2) + b * x + c;
 			}
@@ -338,37 +357,187 @@
 			return func;
 		}
 		
-		
+		private var finalizado:Boolean = false;
 		private function finalizar(e:MouseEvent = null):void
 		{
-			if(true){
+			if(concavidade.selectedItem.data != -1 && vertice.selectedItem.data != -1){
 				var correto:Boolean = true;
-				var tolerancia = 1 / 100;
-				var feed:String;
+				var tolerancia = 0.5;
+				var feed:String = "";
+				
+				trace(resposta.a);
+				
+				//Avaliando a concavidade:
+				var concavidadeSelecionada:String = concavidade.selectedItem.data;
+				if (resposta.a >= 0 && concavidadeSelecionada == "cima") {
+					feed += "Você acertou a concavidade.\n";
+				}else if (resposta.a < 0 && concavidadeSelecionada == "baixo") {
+					feed += "Você acertou a concavidade.\n";
+				}else {
+					correto = false;
+					feed += "Você errou a concavidade, ela é para " + (resposta.a >= 0 ? "cima.\n" : "baixo.\n");
+				}
+				
+				//Avaliando o vértice máximo ou mínimo
+				var verticeSelecionado:String = vertice.selectedItem.data;
+				if (resposta.a >= 0 && verticeSelecionado == "minimo") {
+					feed += "Você acertou o vértice.\n";
+				}else if (resposta.a < 0 && verticeSelecionado == "maximo") {
+					feed += "Você acertou o vértice.\n";
+				}else {
+					correto = false;
+					feed += "Você errou o vértice, ele é " + (resposta.a >= 0 ? "mínimo.\n" : "máximo.\n");
+				}
+				
+				//Analisa o vértice no gráfico (ponto)
+				var respostaVertice:Point = new Point(resposta.xv, resposta.yv);
+				var verticeOnGraph:Point;
+				var verticeSpliced:SimplePoint;
+				for each (var ponto:SimplePoint in pontosGrafico) 
+				{
+					if (ponto.related == pVertice) {
+						verticeOnGraph = new Point(ponto.xpos, ponto.ypos);
+						verticeSpliced = pontosGrafico.splice(pontosGrafico.indexOf(ponto), 1)[0];
+						break;
+					}
+				}
+				
+				if (verticeOnGraph == null) {
+					feed += "Essa equação possui um vértice, você precisa colocá-lo no gráfico.\n";
+					correto = false;
+				}
+				else {
+					if (Point.distance(verticeOnGraph, respostaVertice) < tolerancia) feed += "Você acertou o ponto do vértice no gráfico.\n";
+					else {
+						feed += "Você errou o ponto do vértice no gráfico.\n";
+						correto = false;
+					}
+				}
+				
+				//Analisa as raízes:
+				var respostaRaizes:Array;
+				var raiz1ok:Boolean = false;
+				var raiz2ok:Boolean = false;
+				switch(resposta.caso) {
+					case 1:
+						respostaRaizes = [new Point(resposta.x0, 0), new Point(resposta.x1, 0)];
+						if (pontosGrafico.length < 2) {
+							feed += "Você errou as raízes, essa equação tem duas raízes diferentes.\n";
+							correto = false;
+						}
+						else {
+							for each (var item:SimplePoint in pontosGrafico) 
+							{
+								lookRes1: for each (var respRaiz:Point in respostaRaizes) 
+								{
+									if (Point.distance(respRaiz, new Point(item.xpos, item.ypos)) < tolerancia) {
+										if(item.related == pRaiz1) raiz1ok = true;
+										else raiz2ok = true;
+										respostaRaizes.splice(respostaRaizes.indexOf(respRaiz), 1);
+										break lookRes1;
+									}
+									
+								}
+							}
+							if (raiz1ok) feed += "Você acertou a raiz 1.\n";
+							else {
+								feed += "Você errou a raiz 1.\n";
+								correto = false;
+							}
+							
+							if (raiz2ok) feed += "Você acertou a raiz 2.\n";
+							else {
+								feed += "Você errou a raiz 2.\n";
+								correto = false;
+							}
+						}
+						break;
+					case 2:
+						if (pontosGrafico.length < 2) {
+							feed += "Você errou as raízes, essa equação tem duas raízes iguais.\n";
+							correto = false;
+						}
+						else {
+							for each (var item2:SimplePoint in pontosGrafico) 
+							{
+								lookRes2: for each (var respRaiz2:Point in respostaRaizes) 
+								{
+									if (Point.distance(respRaiz2, new Point(item2.xpos, item2.ypos)) < tolerancia) {
+										if(item2.related == pRaiz1) raiz1ok = true;
+										else raiz2ok = true;
+										respostaRaizes.splice(respostaRaizes.indexOf(respRaiz), 1);
+										break lookRes2;
+									}
+									
+								}
+							}
+							if (raiz1ok) feed += "Você acertou a raiz 1.\n";
+							else {
+								feed += "Você errou a raiz 1.\n";
+								correto = false;
+							}
+							
+							if (raiz2ok) feed += "Você acertou a raiz 2.\n";
+							else {
+								feed += "Você errou a raiz 2.\n";
+								correto = false;
+							}
+						}
+						break;
+					case 3:
+						if (pontosGrafico.length == 0) {
+							feed += "Parabéns, essa equação não tem raízes.\n";
+						}else {
+							feed += "Você errou as raízes, essa equação não tem raízes.\n";
+							correto = false;
+						}
+						break;
+				}
+				
+				if(verticeSpliced != null) pontosGrafico.push(verticeSpliced);
 				
 				if (correto) {
 					//Certo
-					feed = "Correto!";
 					certoErrado.gotoAndStop(2);
 				}else {
 					//Errado
 					certoErrado.gotoAndStop(1);
-					feed = "Errado";
 				}
 				
-				//feedbackScreen.setText(feed);
+				feedbackScreen.setText(feed);
 				
+				finalizado = true;
 				certoErrado.visible = true;
 				unlock(reinicia);
+				concavidade.enabled = false;
+				vertice.enabled = false;
 				//lock(finalizaVermelha);
 			}else {
-				feedbackScreen.setText("Informe ambos os coeficientes linear e angular para avaliar.");
+				feedbackScreen.setText("Informe ambos, a concavidade e o vértice para avaliar.");
 			}
 		}
 		
 		override public function reset(e:MouseEvent = null):void 
 		{
+			resetPontos();
 			sortExec();
+			finalizado = false;
+			concavidade.enabled = true;
+			vertice.enabled = true;
+			concavidade.selectedItem = { label:"Selecione...", data: -1 };
+			vertice.selectedItem = { label:"Selecione...", data: -1 };
+		}
+		
+		private function resetPontos():void 
+		{
+			for each (var item:SimplePoint in pontosGrafico) 
+			{
+				graph.removePoint(item);
+				item.related.visible = true;
+			}
+			
+			pontosGrafico.splice(0, pontosGrafico.length);
+			
 		}
 		
 		
