@@ -83,15 +83,15 @@
 			inicialRaiz2 = new Point(pRaiz2.x, pRaiz2.y);
 			
 			concavidade = new ComboBox();
-			concavidade.x = 165;
-			concavidade.y = 515;
+			concavidade.x = 175;
+			concavidade.y = 495;
 			concavidade.addItem( {label:"Selecione...", data:-1 } );
 			concavidade.addItem( {label:"Para cima", data:"cima" } );
 			concavidade.addItem( {label:"Para baixo", data:"baixo" } );
 			
 			vertice = new ComboBox();
-			vertice.x = 165;
-			vertice.y = 550;
+			vertice.x = 175;
+			vertice.y = 543;
 			vertice.addItem( {label:"Selecione...", data:-1 } );
 			vertice.addItem( {label:"Máximo", data:"maximo" } );
 			vertice.addItem( {label:"Mínimo", data:"minimo" } );
