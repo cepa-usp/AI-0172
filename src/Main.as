@@ -14,6 +14,7 @@
 	import flash.events.Event;
 	import flash.events.MouseEvent;
 	import flash.geom.Point;
+	import flash.text.TextField;
 	import flash.text.TextFormat;
 	/**
 	 * ...
@@ -43,6 +44,8 @@
 		private var inicialRaiz1:Point;
 		private var inicialRaiz2:Point;
 		
+		private var equacao:TextField;
+		
 		private var ordem:Array = [1, 1, 2, 3, 2, 3, 1, 3, 2, 1, 3, 2, 2, 3, 3, 2];
 		private var index:int = 0;
 		
@@ -56,6 +59,7 @@
 			finaliza = finaliza_stage;
 			reinicia = reinicia_stage;
 			certoErrado = certoErrado_stage;
+			equacao = equacao_stage;
 			
 			pVertice = pVertice_stage;
 			pRaiz1 = pRaiz1_stage;
@@ -89,6 +93,7 @@
 			iniciaTutorial();
 		}
 		
+		private var diffY:Number;
 		private function createGraph():void 
 		{
 			xmin = -17;
@@ -98,6 +103,7 @@
 			var yRange:Number = Math.abs((xmin - xmax) * ysize / xsize);
 			var ymin:Number = 	-yRange / 2;
 			var ymax:Number = 	yRange / 2;
+			diffY = Math.abs(ymin) + Math.abs(ymax);
 			
 			var tickSize:Number = 2;
 			
@@ -113,9 +119,9 @@
 			graph.setSubticksDistance(SimpleGraph.AXIS_Y, tickSize / 2);
 			graph.resolution = 0.1;
 			graph.grid = true;
-			graph.pan = false;
+			//graph.pan = false;
 			//graph.buttonMode = true;
-			graph.addEventListener("initPan", startPan);
+			//graph.addEventListener("initPan", startPan);
 			graph.setAxesNameFormat(new TextFormat("arial", 12, 0x000000));
 			graph.setAxisName(SimpleGraph.AXIS_X, "t");
 			graph.setAxisName(SimpleGraph.AXIS_Y, "s");
@@ -135,31 +141,31 @@
 			style.stroke = 2;
 		}
 		
-		private function changePan(e:MouseEvent):void
-		{
-			graph.pan = !graph.pan;
-			graph.buttonMode = graph.pan;
-			
-			for each (var item:SimplePoint in pontosGrafico) 
-			{
-				item.buttonMode = !graph.pan;
-			}
-			
-			if (graph.pan) {
-				panButton.gotoAndStop(2);
-			}else {
-				panButton.gotoAndStop(1);
-			}
-		}
+		private var mousePos:Point;
+		private var posXGraphInicial:Point = new Point();
+		private var posYGraphInicial:Point = new Point();
 		
 		private function startPan(e:Event):void 
 		{
-			graph.addEventListener("stopPan", stopPan);
-			stage.addEventListener(MouseEvent.MOUSE_MOVE, panning);
+			if (e.target is SimplePoint) return;
+			//graph.addEventListener("stopPan", stopPan);
+			mousePos = new Point(stage.mouseX, stage.mouseY);
+			stage.addEventListener(MouseEvent.MOUSE_MOVE, pan2);
+			stage.addEventListener(MouseEvent.MOUSE_UP, stopPan);
 		}
 		
-		private function panning(e:MouseEvent):void 
+		//private function panning(e:MouseEvent):void 
+		private function pan2(e:MouseEvent):void 
 		{
+			var mousePosAtual:Point = new Point(stage.mouseX, stage.mouseY);
+			var displacement:Point = new Point(mousePos.x - mousePosAtual.x, mousePos.y - mousePosAtual.y);
+			var displacementGraph:Point = new Point(graph.pixel2x(0) - graph.pixel2x(displacement.x), graph.pixel2y(0) - graph.pixel2y(displacement.y));
+			
+			graph.setRange(graph.xmin - displacementGraph.x, graph.xmax - displacementGraph.x, graph.ymin - displacementGraph.y, graph.ymax - displacementGraph.y);
+			
+			mousePos.x = mousePosAtual.x;
+			mousePos.y = mousePosAtual.y;
+			
 			xmin = graph.xmin;
 			xmax = graph.xmax;
 			func.xmin = xmin;
@@ -172,13 +178,18 @@
 					item.visible = true;
 				}
 			}
+			
+			graph.draw();
 		}
 		
 		private function stopPan(e:Event):void 
 		{
-			graph.removeEventListener("stopPan", stopPan);
-			stage.removeEventListener(MouseEvent.MOUSE_MOVE, panning);
-			panning(null);
+			//graph.removeEventListener("stopPan", stopPan);
+			//stage.removeEventListener(MouseEvent.MOUSE_MOVE, panning);
+			stage.removeEventListener(MouseEvent.MOUSE_MOVE, pan2);
+			stage.removeEventListener(MouseEvent.MOUSE_UP, stopPan);
+			//pan2(null);
+			//panning(null);
 		}
 		
 		private function addListeners():void 
@@ -194,8 +205,7 @@
 			pRaiz1.buttonMode = true;
 			pRaiz2.buttonMode = true;
 			
-			panButton.addEventListener(MouseEvent.CLICK, changePan);
-			panButton.buttonMode = true;
+			graph.addEventListener(MouseEvent.MOUSE_DOWN, startPan);
 		}
 		
 		private var draggingPoint:SimplePoint;
@@ -205,13 +215,57 @@
 			if (graph.pan) return;
 			draggingPoint = SimplePoint(e.target);
 			stage.addEventListener(MouseEvent.MOUSE_UP, stopDraggPonto);
-			draggingPoint.startDrag();
+			//draggingPoint.startDrag();
+			stage.addEventListener(MouseEvent.MOUSE_MOVE, movingPonto);
+		}
+		
+		private function movingPonto(e:MouseEvent):void 
+		{
+			var posMouseGraph:Point = new Point(graph.pixel2x(graph.mouseX), graph.pixel2y(graph.mouseY));
+			trace(posMouseGraph);
+			var floorX:int = Math.floor(posMouseGraph.x);
+			var ceilX:int = Math.ceil(posMouseGraph.x);
+			var floorY:int = Math.floor(posMouseGraph.y);
+			var ceilY:int = Math.ceil(posMouseGraph.y);
+			
+			var distff:Number = Point.distance(posMouseGraph, new Point(floorX, floorY));
+			var distfc:Number = Point.distance(posMouseGraph, new Point(floorX, ceilY));
+			var distcc:Number = Point.distance(posMouseGraph, new Point(ceilX, ceilY));
+			var distcf:Number = Point.distance(posMouseGraph, new Point(ceilX, floorX));
+			
+			var minDist:Number = Math.min(distff, distfc, distcc, distcf);
+			
+			if (minDist <= 0.4) {
+				switch (minDist) {
+					case distff:
+						draggingPoint.x = graph.x2pixel(floorX);
+						draggingPoint.y = graph.y2pixel(floorY);
+						break;
+					case distfc:
+						draggingPoint.x = graph.x2pixel(floorX);
+						draggingPoint.y = graph.y2pixel(ceilY);
+						break;
+					case distcc:
+						draggingPoint.x = graph.x2pixel(ceilX);
+						draggingPoint.y = graph.y2pixel(ceilY);
+						break;
+					case distcf:
+						draggingPoint.x = graph.x2pixel(ceilX);
+						draggingPoint.y = graph.y2pixel(floorY);
+						break;
+					
+				}
+			}else{
+				draggingPoint.x = graph.mouseX;
+				draggingPoint.y = graph.mouseY;
+			}
 		}
 		
 		private function stopDraggPonto(e:MouseEvent):void
 		{
+			stage.removeEventListener(MouseEvent.MOUSE_MOVE, movingPonto);
 			stage.removeEventListener(MouseEvent.MOUSE_UP, stopDraggPonto);
-			draggingPoint.stopDrag();
+			//draggingPoint.stopDrag();
 			
 			if (fundoGrafico.hitTestPoint(draggingPoint.x + graph.x, draggingPoint.y + graph.y)) {
 				var posGraph:Point = new Point(draggingPoint.x, draggingPoint.y);
@@ -254,10 +308,10 @@
 				var g:SimplePoint = new SimplePoint(posX, posY, pt);
 				g.mouseChildren = false;
 				g.addEventListener(MouseEvent.MOUSE_DOWN, initDragPonto);
-				if (!graph.pan) g.buttonMode = true;
+				g.buttonMode = true;
 				pontosGrafico.push(g);
 				g.related = dragging;
-				graph.addPoint(g);
+				graph.addPoint(g, false, true);
 				graph.draw();
 				encerraDragging(false);
 			}else {
@@ -341,6 +395,19 @@
 			
 			b = -2 * a * xv;
 			c = yv + (a * xv * xv);
+			
+			debug.text = "caso: " + caso;
+			debug.text += "\na: " + a;
+			debug.text += "\nb: " + b;
+			debug.text += "\nc: " + c;
+			debug.text += "\nxv: " + xv;
+			debug.text += "\nyv: " + yv;
+			debug.text += "\nX0: " + x0;
+			debug.text += "\nX1: " + x1;
+			debug.text += "\nn: " + n;
+			debug.text += "\nE: " + E;
+			
+			equacao.text = "Indique a posição do vértice e das raízes da equação: f(x) = " + a + "x²" + (b>=0?"+":"") + b + "x" + (c>=0?"+":"") + c;
 			
 			resposta.x0 = x0;
 			resposta.x1 = x1;
