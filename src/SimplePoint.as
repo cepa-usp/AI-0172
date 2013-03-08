@@ -4,7 +4,7 @@
 	
 	public class SimplePoint extends GraphPoint {
 		
-		private var graph:MovieClip;
+		private var _graph:MovieClip;
 		private var _related:MovieClip;
 		
 		public function SimplePoint (x:Number, y:Number, visual:MovieClip) : void {
@@ -21,6 +21,16 @@
 		public function set related(value:MovieClip):void 
 		{
 			_related = value;
+		}
+		
+		public function get graph():MovieClip 
+		{
+			return _graph;
+		}
+		
+		public function set graph(value:MovieClip):void 
+		{
+			_graph = value;
 		}
 		
 	}

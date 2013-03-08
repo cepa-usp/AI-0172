@@ -35,7 +35,7 @@ package BaseAssets
 		
 		//Telas da atividade:
 		private var creditosScreen:AboutScreen;
-		private var orientacoesScreen:InstScreen;
+		protected var orientacoesScreen:InstScreen;
 		protected var feedbackScreen:FeedBackScreen;
 		protected var statsScreen:StatsScreen;
 		

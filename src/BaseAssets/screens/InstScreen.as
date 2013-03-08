@@ -48,6 +48,8 @@ package BaseAssets.screens
 		
 		private function closeScreen(e:MouseEvent):void 
 		{
+			if (e.target.name == "dragHandleMC" || e.target.name == "upScrollControl" || e.target.name == "downScrollControl") return;
+			
 			Actuate.tween(glassPane, 0.4, { /*scaleX:0, scaleY:0*/alpha:0 } );
 			Actuate.tween(this, 0.4, { scaleX:0, scaleY:0 } ).onComplete(turnInvisible);
 		}
