@@ -126,10 +126,10 @@
 			
 			graph.enableTicks(SimpleGraph.AXIS_X, true);
 			graph.enableTicks(SimpleGraph.AXIS_Y, true);
-			graph.setTicksDistance(SimpleGraph.AXIS_X, tickSize);
-			graph.setTicksDistance(SimpleGraph.AXIS_Y, tickSize);
-			graph.setSubticksDistance(SimpleGraph.AXIS_X, tickSize / 2);
-			graph.setSubticksDistance(SimpleGraph.AXIS_Y, tickSize / 2);
+			graph.setTicksDistance(SimpleGraph.AXIS_X, 5);
+			graph.setTicksDistance(SimpleGraph.AXIS_Y, 5);
+			graph.setSubticksDistance(SimpleGraph.AXIS_X, 1);
+			graph.setSubticksDistance(SimpleGraph.AXIS_Y, 1);
 			graph.resolution = 0.1;
 			graph.grid = true;
 			//graph.pan = false;
@@ -404,8 +404,8 @@
 			switch (caso) {
 				case 1:
 					E = Math.ceil(Math.random() * rangeInteiros);
-					yv = (Math.random() > 0.5 ? 1 : -1) * E;
-					n = Math.ceil(Math.random() * E);
+					yv = (Math.random() > 0.5 ? 1 : -1) * E * E;
+					n = getRandonFactor(E);
 					x0 = (Math.random() > 0.5 ? 1 : -1) * Math.floor(Math.random() * rangeInteiros);
 					x1 = x0 + 2 * n;
 					xv = (x0 + x1) / 2;
@@ -438,7 +438,8 @@
 			//debug.text += "\nn: " + n;
 			//debug.text += "\nE: " + E;
 			
-			equacao.text = "Indique a posição do vértice e das raízes da equação: f(t) = " + a + "t²" + (b>=0?"+":"") + b + "t" + (c>=0?"+":"") + c;
+			if (true) equacao.text = "Indique a posição do vértice e das raízes (se houver) de s(t) = " + a + "t²" + (b >= 0?"+":"") + b + "t" + (c >= 0?"+":"") + c;
+			else equacao.text = "Indique a posição do vértice e das raízes (se houver) de s(t) = " + a + "(t" + (xv >= 0?"-" + xv:"+" + Math.abs(xv)) + ")²" + (yv >= 0?"+":"") + yv;
 			
 			resposta.x0 = x0;
 			resposta.x1 = x1;
@@ -453,6 +454,48 @@
 			var func:GraphFunction = new GraphFunction(xmin, xmax, f);
 			
 			return func;
+		}
+		
+		private function getRandonFactor(n:Number):int
+		{
+			var factors:Vector.<uint> = getFactors(n);
+			
+			return factors[Math.floor(Math.random() * factors.length)];
+		}
+		
+		/**
+		 * Retorna um vetor contendo os fatores de <source>number</source>.
+		 * @param	number - O número cuja fatoração se deseja.
+		 * @return	Uma matriz contendo os fatores de <source>number</source>. Por exemplo, na instrução
+		 * var fatores:Array = CEPA.getFactors(12);
+		 * 
+		 * o conteúdo de <source>fatores</fatores> será [1, 2, 2, 3] pois
+		 * 12 = 1 * 2 * 2 * 3
+		 * 
+		 * obs.: se <source>fatores</fatores> contiver dois elementos, pode-se concluir que <source>number</source> é primo.
+		 */
+		private function getFactors (number:uint) : Vector.<uint> 
+		{
+			var factors:Vector.<uint> = new Vector.<uint>();
+			factors.push(number < 0 ? -1 : 1);
+			
+			number *= (number < 0 ? -1 : 1);
+			
+			var tmp:int = number;
+			var product:int = 1;
+			var factor:int = 1;
+			
+			for (var integer:int = 2; integer <= number && product != number; integer++) {
+				while (tmp % integer == 0) {
+					tmp /= integer;
+					factors.push(integer);
+				}
+				
+				product = 1;
+				for each (factor in factors) product *= factor;
+			}
+
+			return factors;
 		}
 		
 		private var finalizado:Boolean = false;
@@ -703,31 +746,31 @@
 				balao.visible = false;
 				
 				tutoSequence = ["Veja aqui as orientações.",
-								"Os gráficos de duas funções do primeiro grau, escolhidas aleatoriamente pelo software, são exibidos aqui (uma em vermelho e outra em verde).",
-								"Caso não esteja vendo algum desses gráficos, arraste o plano cartesiano para cima ou para baixo.",
-								"Analise os gráficos acima e, com base neles, indique nos campos apropriados abaixo os valores dos coeficientes linear e angular.",
-								"Pressione \"avaliar\" para verificar sua resposta.",
-								"Pressione \"nova reta\" para que o software exiba um novo gráfico.",
-								"Faça o mesmo para a reta verde.",
-								"Pressione este botão para reiniciar este tutorial."];
+								"Esta é uma função polinomial do segundo grau escolhida aleatoriamente.",
+								"Arraste este ponto para a posição do vértice da função (arraste-o de volta para a tabela ou pressione 'delete' para removê-lo do plano cartesiano).",
+								"Arraste estes pontos para as posições das raízes (se houver).",
+								"Indique a concavidade da curva.",
+								"Indique se o vértice é um máximo ou um mínimo da função.",
+								"Pressione este botão para verificar sua resposta.",
+								"Pressione este botão para criar um novo exercício."];
 				
 				pointsTuto = 	[new Point(650, 535),
-								new Point(180 , 180),
-								new Point(250 , 250),
-								new Point(165 , 475),
-								new Point(170 , 564),
-								new Point(262 , 564),
-								new Point(490 , 475),
-								new Point(650 , 490)];
+								new Point(560 , 20),
+								new Point(420 , 486),
+								new Point(550 , 486),
+								new Point(275 , 508),
+								new Point(275 , 556),
+								new Point(452 , 565),
+								new Point(575 , 565)];
 								
 				tutoBaloonPos = [[CaixaTexto.RIGHT, CaixaTexto.LAST],
-								["", ""],
-								["", ""],
-								[CaixaTexto.BOTTON, CaixaTexto.FIRST],
-								[CaixaTexto.BOTTON, CaixaTexto.FIRST],
+								[CaixaTexto.TOP, CaixaTexto.LAST],
 								[CaixaTexto.BOTTON, CaixaTexto.CENTER],
 								[CaixaTexto.BOTTON, CaixaTexto.LAST],
-								[CaixaTexto.RIGHT, CaixaTexto.CENTER]];
+								[CaixaTexto.LEFT, CaixaTexto.LAST],
+								[CaixaTexto.LEFT, CaixaTexto.LAST],
+								[CaixaTexto.BOTTON, CaixaTexto.CENTER],
+								[CaixaTexto.BOTTON, CaixaTexto.LAST]];
 			}
 			balao.removeEventListener(BaseEvent.NEXT_BALAO, closeBalao);
 			
