@@ -7,6 +7,8 @@
 	import cepa.graph.GraphFunction;
 	import cepa.graph.GraphPoint;
 	import cepa.graph.rectangular.SimpleGraph;
+	import cepa.utils.Cronometer;
+	import cepa.utils.MouseMotionData;
 	import fl.controls.ComboBox;
 	import flash.display.MovieClip;
 	import flash.display.SimpleButton;
@@ -150,7 +152,7 @@
 			//addChild(graphBorder);
 			
 			style.color = 0xFF0000;
-			style.alpha = 1;
+			style.alpha = 0;
 			style.stroke = 2;
 		}
 		
@@ -160,6 +162,11 @@
 		
 		private function startPan(e:Event):void 
 		{
+			stage.removeEventListener(Event.ENTER_FRAME, continuePan);
+			if (cron.isRunning()) {
+				cron.stop();
+				cron.reset();
+			}
 			if (e.target is SimplePoint) return;
 			//graph.addEventListener("stopPan", stopPan);
 			mousePos = new Point(stage.mouseX, stage.mouseY);
@@ -183,6 +190,12 @@
 			xmax = graph.xmax;
 			func.xmin = xmin;
 			func.xmax = xmax;
+			
+			atualizaGrafico();
+		}
+		
+		private function atualizaGrafico():void
+		{
 			for each (var item:SimplePoint in pontosGrafico) 
 			{
 				if (item.xpos < xmin || item.xpos > xmax || item.ypos < graph.ymin || item.ypos > graph.ymax) {
@@ -195,6 +208,9 @@
 			graph.draw();
 		}
 		
+		private var mouseMotion:MouseMotionData = MouseMotionData.instance;
+		private var vel:Point = new Point();
+		private var cron:Cronometer = new Cronometer();
 		private function stopPan(e:Event):void 
 		{
 			//graph.removeEventListener("stopPan", stopPan);
@@ -203,6 +219,40 @@
 			stage.removeEventListener(MouseEvent.MOUSE_UP, stopPan);
 			//pan2(null);
 			//panning(null);
+			if (mouseMotion.speed.x != 0 || mouseMotion.speed.y != 0) {
+				vel.x = mouseMotion.speed.x;
+				vel.y = mouseMotion.speed.y;
+				//cron.stop();
+				//cron.reset();
+				cron.start();
+				stage.addEventListener(Event.ENTER_FRAME, continuePan);
+			}
+		}
+		
+		private var decreaseScale:Number = 0.9;
+		private function continuePan(e:Event):void 
+		{
+			var dt:Number = cron.read() / 1000;
+			
+			vel.x *= decreaseScale;
+			vel.y *= decreaseScale;
+			
+			var displacement:Point = new Point(-vel.x * dt, -vel.y * dt);
+			var displacementGraph:Point = new Point(graph.pixel2x(0) - graph.pixel2x(displacement.x), graph.pixel2y(0) - graph.pixel2y(displacement.y));
+			
+			graph.setRange(graph.xmin - displacementGraph.x, graph.xmax - displacementGraph.x, graph.ymin - displacementGraph.y, graph.ymax - displacementGraph.y);
+			xmin = graph.xmin;
+			xmax = graph.xmax;
+			func.xmin = xmin;
+			func.xmax = xmax;
+			
+			atualizaGrafico();
+			
+			if (Math.round(vel.x) == 0 && Math.round(vel.y) == 0) {
+				stage.removeEventListener(Event.ENTER_FRAME, continuePan);
+				cron.stop();
+			}
+			cron.reset();
 		}
 		
 		private function addListeners():void 
@@ -304,7 +354,6 @@
 		{
 			if (finalizado) return;
 			dragging = MovieClip(e.target);
-			trace(dragging.name);
 			stage.addEventListener(MouseEvent.MOUSE_UP, stopDragg);
 			dragging.startDrag();
 		}
@@ -313,7 +362,6 @@
 		
 		private function stopDragg(e:MouseEvent):void
 		{
-			trace(dragging.name);
 			stage.removeEventListener(MouseEvent.MOUSE_UP, stopDragg);
 			dragging.stopDrag();
 			if (fundoGrafico.hitTestPoint(dragging.x, dragging.y)) {
@@ -376,6 +424,7 @@
 			index++;
 			if (index >= ordem.length) index = 0;
 			
+			style.alpha = 0;
 			graph.addFunction(func, style);
 			graph.draw();
 			
@@ -690,6 +739,8 @@
 					certoErrado.gotoAndStop(1);
 				}
 				
+				style.alpha = 1;
+				graph.draw();
 				feedbackScreen.setText(feed);
 				
 				finalizado = true;
