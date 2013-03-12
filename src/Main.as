@@ -16,6 +16,7 @@
 	import flash.events.Event;
 	import flash.events.KeyboardEvent;
 	import flash.events.MouseEvent;
+	import flash.external.ExternalInterface;
 	import flash.filters.GlowFilter;
 	import flash.geom.Point;
 	import flash.text.TextField;
@@ -56,6 +57,7 @@
 		
 		private var ordem:Array = [1, 1, 2, 3, 2, 3, 1, 3, 2, 1, 3, 2, 2, 3, 3, 2];
 		private var index:int = 0;
+		private var forma:int = 1;
 		
 		public function Main() 
 		{
@@ -64,6 +66,10 @@
 		
 		override protected function init():void 
 		{
+			if (root.loaderInfo.parameters["forma"]) {
+				forma = int(root.loaderInfo.parameters["forma"]);
+			}
+			
 			var rollText:RollText = new RollText();
 			orientacoesScreen.addChild(rollText);
 			rollText.x = -260;
@@ -110,7 +116,11 @@
 			addListeners();
 			reset();
 			
-			iniciaTutorial();
+			if (ExternalInterface.available) {
+				if(ExternalInterface.call("getLocalStorageString") != "visitado") iniciaTutorial();
+			}else {
+				iniciaTutorial();
+			}
 		}
 		
 		private var diffY:Number;
@@ -531,7 +541,7 @@
 			//debug.text += "\nn: " + n;
 			//debug.text += "\nE: " + E;
 			
-			if (true) equacao.text = "Indique a posição do vértice e das raízes (se houver) de s(t) = " + a + "t²" + (b >= 0?"+":"") + b + "t" + (c >= 0?"+":"") + c;
+			if (forma == 1) equacao.text = "Indique a posição do vértice e das raízes (se houver) de s(t) = " + a + "t²" + (b >= 0?"+":"") + b + "t" + (c >= 0?"+":"") + c;
 			else equacao.text = "Indique a posição do vértice e das raízes (se houver) de s(t) = " + a + "(t" + (xv >= 0?"-" + xv:"+" + Math.abs(xv)) + ")²" + (yv >= 0?"+":"") + yv;
 			
 			resposta.x0 = x0;
@@ -843,6 +853,7 @@
 								"Use esta expressão, escolhida aleatoriamente, para determinar algebricamente o vértice e as raízes.",
 								"Use o ponto vermelho para indicar a posição do vértice: arraste-o até lá.",
 								"Use os pontos verdes para indicar as raízes, se houver (arraste-os de volta à tabela para removê-los do plano cartesiano).",
+								"Arraste o plano cartesiano para ajustar a região visível.",
 								"Indique a concavidade da curva.",
 								"Indique se o vértice é um máximo ou um mínimo da função.",
 								"Pressione este botão para verificar sua resposta.",
@@ -852,6 +863,7 @@
 								new Point(560 , 20),
 								new Point(420 , 486),
 								new Point(550 , 486),
+								new Point(250 , 200),
 								new Point(275 , 508),
 								new Point(275 , 556),
 								new Point(452 , 565),
@@ -861,6 +873,7 @@
 								[CaixaTexto.TOP, CaixaTexto.LAST],
 								[CaixaTexto.BOTTON, CaixaTexto.CENTER],
 								[CaixaTexto.BOTTON, CaixaTexto.LAST],
+								["", ""],
 								[CaixaTexto.LEFT, CaixaTexto.LAST],
 								[CaixaTexto.LEFT, CaixaTexto.LAST],
 								[CaixaTexto.BOTTON, CaixaTexto.CENTER],
@@ -872,6 +885,10 @@
 			balao.setPosition(pointsTuto[tutoPos].x, pointsTuto[tutoPos].y);
 			balao.addEventListener(BaseEvent.NEXT_BALAO, closeBalao);
 			balao.addEventListener(BaseEvent.CLOSE_BALAO, iniciaAi);
+			
+			if (ExternalInterface.available) {
+				ExternalInterface.call("save2LS", "visitado");
+			}
 		}
 		
 		private function closeBalao(e:Event):void 
