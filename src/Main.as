@@ -14,10 +14,13 @@
 	import flash.display.SimpleButton;
 	import flash.display.Sprite;
 	import flash.events.Event;
+	import flash.events.KeyboardEvent;
 	import flash.events.MouseEvent;
+	import flash.filters.GlowFilter;
 	import flash.geom.Point;
 	import flash.text.TextField;
 	import flash.text.TextFormat;
+	import flash.ui.Keyboard;
 	import flash.utils.getDefinitionByName;
 	import flash.utils.getQualifiedClassName;
 	/**
@@ -38,7 +41,8 @@
 		
 		private var finaliza:SimpleButton;
 		private var reinicia:SimpleButton;
-		private var certoErrado:MovieClip;
+		private var certoErradoC:MovieClip;
+		private var certoErradoV:MovieClip;
 		
 		private var pVertice:MovieClip;
 		private var pRaiz1:MovieClip;
@@ -69,7 +73,8 @@
 			
 			finaliza = finaliza_stage;
 			reinicia = reinicia_stage;
-			certoErrado = certoErrado_stage;
+			certoErradoC = certoErrado_concavidade;
+			certoErradoV = certoErrado_vertice;
 			equacao = equacao_stage;
 			
 			pVertice = pVertice_stage;
@@ -151,7 +156,7 @@
 			//graphBorder.y = graph.y;
 			//addChild(graphBorder);
 			
-			style.color = 0xFF0000;
+			style.color = 0x808080;
 			style.alpha = 0;
 			style.stroke = 2;
 		}
@@ -168,6 +173,12 @@
 				cron.reset();
 			}
 			if (e.target is SimplePoint) return;
+			
+			if (selectedPoint != null) {
+				selectedPoint.graph.ponto.filters = [];
+				selectedPoint = null;
+			}
+			
 			//graph.addEventListener("stopPan", stopPan);
 			mousePos = new Point(stage.mouseX, stage.mouseY);
 			stage.addEventListener(MouseEvent.MOUSE_MOVE, pan2);
@@ -270,13 +281,45 @@
 			
 			graph.addEventListener(MouseEvent.MOUSE_DOWN, startPan);
 			stage.addEventListener(MouseEvent.MOUSE_MOVE, verifyForLabel);
+			
+			stage.addEventListener(KeyboardEvent.KEY_DOWN, keyboardHandler);
 		}
 		
+		private function keyboardHandler(e:KeyboardEvent):void 
+		{
+			if (e.keyCode == Keyboard.DELETE) {
+				if (selectedPoint != null) {
+					selectedPoint.graph.ponto.filters = [];
+					graph.removePoint(selectedPoint);
+					pontosGrafico.splice(pontosGrafico.indexOf(selectedPoint), 1);
+					//graph.removeChild(draggingPoint);
+					selectedPoint.related.visible = true;
+					selectedPoint = null;
+				}
+			}
+		}
+		
+		private var selectedFilter:GlowFilter = new GlowFilter(0x000000);
+		private var selectedPoint:SimplePoint;
 		private var draggingPoint:SimplePoint;
 		private function initDragPonto(e:MouseEvent):void 
 		{
 			if (finalizado) return;
-			if (graph.pan) return;
+			
+			if(selectedPoint != null){
+				if (selectedPoint != SimplePoint(e.target)) {
+					selectedPoint.graph.ponto.filters = [];
+					selectedPoint = SimplePoint(e.target);
+					selectedPoint.graph.ponto.filters = [selectedFilter];
+				}else {
+					selectedPoint.graph.ponto.filters = [];
+					selectedPoint = null;
+				}
+			}else {
+				selectedPoint = SimplePoint(e.target);
+				selectedPoint.graph.ponto.filters = [selectedFilter];
+			}
+			
 			draggingPoint = SimplePoint(e.target);
 			stage.addEventListener(MouseEvent.MOUSE_UP, stopDraggPonto);
 			//draggingPoint.startDrag();
@@ -428,7 +471,8 @@
 			graph.addFunction(func, style);
 			graph.draw();
 			
-			certoErrado.visible = false;
+			certoErradoC.visible = false;
+			certoErradoV.visible = false;
 				
 			lock(reinicia);
 			//unlock(finalizaVermelha);
@@ -553,29 +597,7 @@
 			if(concavidade.selectedItem.data != -1 && vertice.selectedItem.data != -1){
 				var correto:Boolean = true;
 				var tolerancia = 0.5;
-				var feed:String = "";
-				
-				//Avaliando a concavidade:
-				var concavidadeSelecionada:String = concavidade.selectedItem.data;
-				if (resposta.a >= 0 && concavidadeSelecionada == "cima") {
-					feed += "A concavidade é \"para cima\". Quando dizemos isso, queremos dizer que a parte \"aberta\" do gráfico de s(t) está voltada para cima no plano cartesiano (veja o gráfico).\n";
-				}else if (resposta.a < 0 && concavidadeSelecionada == "baixo") {
-					feed += "A concavidade é \”para baixo\”. Quando dizemos isso, queremos dizer que a parte \"aberta\" do gráfico de s(t) está voltada para baixo no plano cartesiano (veja o gráfico).\n";
-				}else {
-					correto = false;
-					feed += "A concavidade é " + (resposta.a >= 0 ? "\"para cima\"" : "\"para baixo\"") + ". Quando dizemos isso, queremos dizer que a parte \"aberta\" do gráfico de s(t) está voltada para " + (resposta.a >= 0 ? "cima" : "baixo") + " no plano cartesiano (veja o gráfico).\n";
-				}
-				
-				//Avaliando o vértice máximo ou mínimo
-				var verticeSelecionado:String = vertice.selectedItem.data;
-				if (resposta.a >= 0 && verticeSelecionado == "minimo") {
-					feed += "O vértice é um mínimo de s(t): observe no plano cartesiano que o vértice é o ponto mais baixo do gráfico de s(t). No caso da função polinomial do segundo grau, isto acontece sempre que a < 0.\n";
-				}else if (resposta.a < 0 && verticeSelecionado == "maximo") {
-					feed += "O vértice é um máximo de s(t): observe no plano cartesiano que o vértice é o ponto mais alto do gráfico de s(t). No caso da função polinomial do segundo grau, isto acontece sempre que a < 0.\n";
-				}else {
-					correto = false;
-					feed += "O vértice é um " + (resposta.a >= 0 ? "mínimo" : "máximo") + " de s(t): observe no plano cartesiano que o vértice é o ponto mais " + (resposta.a >= 0 ? "baixo" : "alto") + " do gráfico de s(t). No caso da função polinomial do segundo grau, isto acontece sempre que a < 0.\n";
-				}
+				var feed:String = "O gráfico de s(t) foi desenhado no plano cartesiano. Compare-o com suas respostas e com as observações a seguir:\n";
 				
 				//Analisa o vértice no gráfico (ponto)
 				var respostaVertice:Point = new Point(resposta.xv, resposta.yv);
@@ -591,13 +613,13 @@
 				}
 				
 				if (verticeOnGraph == null) {
-					feed += "A posição do vértice não foi indicada (veja o gráfico de f).\n";
+					feed += "• A posição do vértice não foi indicada (veja o gráfico de f).\n";
 					correto = false;
 				}
 				else {
-					if (Point.distance(verticeOnGraph, respostaVertice) < tolerancia) feed += "O vértice foi posicionado corretamente.\n";
+					if (Point.distance(verticeOnGraph, respostaVertice) < tolerancia) feed += "• O vértice foi posicionado corretamente.\n";
 					else {
-						feed += "O vértice foi posicionado incorretamente (veja o gráfico de f).\n";
+						feed += "• O vértice foi posicionado incorretamente (veja o gráfico de f).\n";
 						correto = false;
 					}
 				}
@@ -610,7 +632,7 @@
 					case 1:
 						respostaRaizes = [new Point(resposta.x0, 0), new Point(resposta.x1, 0)];
 						if (pontosGrafico.length == 0) {
-							feed += "Nenhuma das duas raízes foi indicada. Veja no plano cartesiano que o gráfico de s(t) cruza o eixo t duas vezes. Esses cruzamentos indicam as duas raízes.";
+							feed += "• Nenhuma das duas raízes foi indicada. Veja no plano cartesiano que o gráfico de s(t) cruza o eixo t duas vezes. Esses cruzamentos indicam as duas raízes.";
 						}else if (pontosGrafico.length == 1) {
 							var raizPosicionada:SimplePoint = pontosGrafico[0];
 							var raizPosOk:Boolean = false;
@@ -631,9 +653,9 @@
 								}
 							}
 							if (raizPosOk) {
-								feed += "A raiz à " + (raizDireita ? "direita":"esquerda") + " está correta, mas a outra não foi indicada. Veja no plano cartesiano que o gráfico de s(t) cruza o eixo t duas vezes. Esses cruzamentos indicam as duas raízes.";
+								feed += "• A raiz à " + (raizDireita ? "direita":"esquerda") + " está correta, mas a outra não foi indicada. Veja no plano cartesiano que o gráfico de s(t) cruza o eixo t duas vezes. Esses cruzamentos indicam as duas raízes.";
 							}else{
-								feed += "Uma das raízes foi posicionada incorretamente, mas a outra não foi indicada.\n";
+								feed += "• Uma das raízes foi posicionada incorretamente, mas a outra não foi indicada.\n";
 							}
 							correto = false;
 						}else {
@@ -655,42 +677,42 @@
 								}
 							}
 							if (raiz1ok && raiz2ok) {
-								feed += "As duas raízes foram indicadas corretamente.\n";
+								feed += "• As duas raízes foram indicadas corretamente.\n";
 							}else if (raiz1ok) {
 								if (raiz2.ypos != 0) {
 									if (raiz2.xpos < raiz1.xpos) feed += "A raiz à direita está correta, mas a outra não: veja o gráfico de s(t) e lembre-se de que, por definição, a raiz é um ponto com ordenada nula, isto é, sobre o eixo t.";
-									else feed += "A raiz à esquerda está correta, mas a outra não: veja o gráfico de s(t) e lembre-se de que, por definição, a raiz é um ponto com ordenada nula, isto é, sobre o eixo t.";
+									else feed += "• A raiz à esquerda está correta, mas a outra não: veja o gráfico de s(t) e lembre-se de que, por definição, a raiz é um ponto com ordenada nula, isto é, sobre o eixo t.";
 								}else {
 									if (raiz2.xpos < raiz1.xpos) feed += "A raiz à direita está correta, mas a outra não: veja o gráfico de s(t).";
-									else feed += "A raiz à esquerda está correta, mas a outra não: veja o gráfico de s(t).";
+									else feed += "• A raiz à esquerda está correta, mas a outra não: veja o gráfico de s(t).";
 								}
 								correto = false;
 							}else if (raiz2ok) {
 								if (raiz1.ypos != 0) {
 									if (raiz1.xpos < raiz2.xpos) feed += "A raiz à direita está correta, mas a outra não: veja o gráfico de s(t) e lembre-se de que, por definição, a raiz é um ponto com ordenada nula, isto é, sobre o eixo t.";
-									else feed += "A raiz à esquerda está correta, mas a outra não: veja o gráfico de s(t) e lembre-se de que, por definição, a raiz é um ponto com ordenada nula, isto é, sobre o eixo t.";
+									else feed += "• A raiz à esquerda está correta, mas a outra não: veja o gráfico de s(t) e lembre-se de que, por definição, a raiz é um ponto com ordenada nula, isto é, sobre o eixo t.";
 								}else {
 									if (raiz1.xpos < raiz2.xpos) feed += "A raiz à direita está correta, mas a outra não: veja o gráfico de s(t).";
-									else feed += "A raiz à esquerda está correta, mas a outra não: veja o gráfico de s(t).";
+									else feed += "• A raiz à esquerda está correta, mas a outra não: veja o gráfico de s(t).";
 								}
 								correto = false;
 							}else {
-								feed += "As duas raízes foram indicadas incorretamente.\n";
+								feed += "• As duas raízes foram indicadas incorretamente.\n";
 								correto = false;
 							}
 						}
 						break;
 					case 2:
 						if (pontosGrafico.length == 0) {
-							feed += "A raiz (de multiplicidade 2) não foi indicada. Veja no plano cartesiano que o gráfico de s(t) apenas toca o eixo t, sem cruzá-lo. Neste caso, temos ainda duas raízes, mas elas têm a mesma abscissa.";
+							feed += "• A raiz (de multiplicidade 2) não foi indicada. Veja no plano cartesiano que o gráfico de s(t) apenas toca o eixo t, sem cruzá-lo. Neste caso, temos ainda duas raízes, mas elas têm a mesma abscissa.";
 						}else if (pontosGrafico.length == 1) {
 							
 							if (Point.distance(new Point(pontosGrafico[0].xpos, pontosGrafico[0].ypos), new Point(respostaRaizes[0].x, respostaRaizes[0].y)) < tolerancia) {
-								feed += "A raiz (de multiplicidade 2) foi posicionada corretamente.\n";
+								feed += "• A raiz (de multiplicidade 2) foi posicionada corretamente.\n";
 							}else {
-								feed += "A raiz (de multiplicidade 2) foi posicionada incorretamente. Veja o gráfico de s(t).\n";
+								feed += "• A raiz (de multiplicidade 2) foi posicionada incorretamente. Veja o gráfico de s(t).\n";
+								correto = false;
 							}
-							correto = false;
 						}else {
 							for each (var item2:SimplePoint in pontosGrafico) 
 							{
@@ -706,45 +728,66 @@
 								}
 							}
 							if (raiz1ok && raiz2ok) {
-								feed += "As duas raízes foram indicadas corretamente..\n";
+								feed += "• As duas raízes foram indicadas corretamente..\n";
 							}else if(raiz1ok || raiz2ok){
-								feed += "Uma das raízes foi posicionada corretamente, mas a outra não: veja no plano cartesiano que o gráfico de s(t) apenas toca o eixo t, sem cruzá-lo. Neste caso, temos ainda duas raízes, mas elas têm a mesma abscissa.\n";
+								feed += "• Uma das raízes foi posicionada corretamente, mas a outra não: veja no plano cartesiano que o gráfico de s(t) apenas toca o eixo t, sem cruzá-lo. Neste caso, temos ainda duas raízes, mas elas têm a mesma abscissa.\n";
 								correto = false;
 							}else {
-								feed += "As duas raízes foram indicadas incorretamente. Veja no plano cartesiano que o gráfico de s(t) apenas toca o eixo t, sem cruzá-lo. Neste caso, temos ainda duas raízes, mas elas têm a mesma abscissa.\n";
+								feed += "• As duas raízes foram indicadas incorretamente. Veja no plano cartesiano que o gráfico de s(t) apenas toca o eixo t, sem cruzá-lo. Neste caso, temos ainda duas raízes, mas elas têm a mesma abscissa.\n";
 								correto = false;
 							}
 						}
 						break;
 					case 3:
 						if (pontosGrafico.length == 0) {
-							feed += "Nenhuma raiz foi indicada, o que está correto, pois s(t) não tem raiz: seu gráfico não cruza o eixo t.\n";
+							feed += "• Nenhuma raiz foi indicada, o que está correto, pois s(t) não tem raiz: seu gráfico não cruza o eixo t.\n";
 						}else if(pontosGrafico.length == 1){
-							feed += "Uma raiz foi indicada, mas s(t) não tem raiz, pois seu gráfico não cruza o eixo t.\n";
+							feed += "• Uma raiz foi indicada, mas s(t) não tem raiz, pois seu gráfico não cruza o eixo t.\n";
 							correto = false;
 						}else {
-							feed += "Duas raízes foram indicadas, mas s(t) não tem raiz, pois seu gráfico não cruza o eixo t.\n";
+							feed += "• Duas raízes foram indicadas, mas s(t) não tem raiz, pois seu gráfico não cruza o eixo t.\n";
 							correto = false;
 						}
 						break;
 				}
 				
-				if(verticeSpliced != null) pontosGrafico.push(verticeSpliced);
-				
-				if (correto) {
-					//Certo
-					certoErrado.gotoAndStop(2);
+				//Avaliando a concavidade:
+				var concavidadeSelecionada:String = concavidade.selectedItem.data;
+				if (resposta.a >= 0 && concavidadeSelecionada == "cima") {
+					feed += "• Correto: a concavidade é para cima.\n";
+					certoErradoC.gotoAndStop(2);
+				}else if (resposta.a < 0 && concavidadeSelecionada == "baixo") {
+					feed += "• Correto: a concavidade é para baixo.\n";
+					certoErradoC.gotoAndStop(2);
 				}else {
-					//Errado
-					certoErrado.gotoAndStop(1);
+					correto = false;
+					certoErradoC.gotoAndStop(1);
+					feed += "• A concavidade é " + (resposta.a >= 0 ? "\"para cima\"" : "\"para baixo\"") + ". Quando dizemos isso, queremos dizer que a parte \"aberta\" do gráfico de s(t) está voltada para " + (resposta.a >= 0 ? "cima" : "baixo") + " no plano cartesiano (veja o gráfico).\n";
 				}
+				
+				//Avaliando o vértice máximo ou mínimo
+				var verticeSelecionado:String = vertice.selectedItem.data;
+				if (resposta.a >= 0 && verticeSelecionado == "minimo") {
+					feed += "• Correto: o vértice é um mínimo.\n";
+					certoErradoV.gotoAndStop(2);
+				}else if (resposta.a < 0 && verticeSelecionado == "maximo") {
+					feed += "• Correto: o vértice é um máximo.\n";
+					certoErradoV.gotoAndStop(2);
+				}else {
+					correto = false;
+					certoErradoV.gotoAndStop(1);
+					feed += "• O vértice é um " + (resposta.a >= 0 ? "mínimo" : "máximo") + " de s(t): observe no plano cartesiano que o vértice é o ponto mais " + (resposta.a >= 0 ? "baixo" : "alto") + " do gráfico de s(t). No caso da função polinomial do segundo grau, isto acontece sempre que a < 0.\n";
+				}
+				
+				if(verticeSpliced != null) pontosGrafico.push(verticeSpliced);
 				
 				style.alpha = 1;
 				graph.draw();
 				feedbackScreen.setText(feed);
 				
 				finalizado = true;
-				certoErrado.visible = true;
+				certoErradoC.visible = true;
+				certoErradoV.visible = true;
 				unlock(reinicia);
 				concavidade.enabled = false;
 				vertice.enabled = false;
@@ -797,9 +840,9 @@
 				balao.visible = false;
 				
 				tutoSequence = ["Veja aqui as orientações.",
-								"Esta é uma função polinomial do segundo grau escolhida aleatoriamente.",
-								"Arraste este ponto para a posição do vértice da função (arraste-o de volta para a tabela ou pressione 'delete' para removê-lo do plano cartesiano).",
-								"Arraste estes pontos para as posições das raízes (se houver).",
+								"Use esta expressão, escolhida aleatoriamente, para determinar algebricamente o vértice e as raízes.",
+								"Use o ponto vermelho para indicar a posição do vértice: arraste-o até lá.",
+								"Use os pontos verdes para indicar as raízes, se houver (arraste-os de volta à tabela para removê-los do plano cartesiano).",
 								"Indique a concavidade da curva.",
 								"Indique se o vértice é um máximo ou um mínimo da função.",
 								"Pressione este botão para verificar sua resposta.",

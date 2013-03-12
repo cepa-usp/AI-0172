@@ -48,6 +48,16 @@
 			//dragHandleMC.addEventListener(MouseEvent.MOUSE_UP, stopScroll);
 			
 			init(target);
+			this.buttonMode = true;
+			
+			if (stage) addScrollListener(null);
+			else addEventListener(Event.ADDED_TO_STAGE, addScrollListener);
+		}
+		
+		private function addScrollListener(e:Event):void 
+		{
+			removeEventListener(Event.ADDED_TO_STAGE, addScrollListener);
+			stage.addEventListener(MouseEvent.MOUSE_WHEEL, wheelScroll);
 		}
 		//
 		public function init(target:MovieClip):void {	
@@ -84,8 +94,29 @@
 			//downScrollControl.addEventListener(MouseEvent.MOUSE_UP, stopScroll);
 	
 			setMask();
-			this.x = targetMC.x+targetMC.width + 5;
+			this.x = targetMC.x+targetMC.width + 10;
 			this.y = targetMC.y+15;
+		}
+		
+		private function wheelScroll(e:MouseEvent):void 
+		{
+			if (e.delta > 0) {
+				if (dragHandleMC.y > top) {
+					dragHandleMC.y-=arrowMove;
+					if (dragHandleMC.y < top) {
+						dragHandleMC.y = top;
+					}
+					startScroll();
+				}
+			}else {
+				if (dragHandleMC.y < dragBot) {
+					dragHandleMC.y+=arrowMove;
+					if (dragHandleMC.y > dragBot) {
+						dragHandleMC.y = dragBot;
+					}
+					startScroll();
+				}
+			}
 		}
 		
 		private function setMask() {
