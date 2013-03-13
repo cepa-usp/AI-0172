@@ -30,8 +30,8 @@ function init () {
 	attributes.id = "ai";
 	attributes.align = "middle";
 
-	swfobject.embedSWF("swf/AI_Loader.swf", "ai-container", flashvars.width, flashvars.height, "11.2", "expressInstall.swf", flashvars, params, attributes);
-	//swfobject.embedSWF(flashvars.ai, "ai-container", flashvars.width, flashvars.height, "11.2", "expressInstall.swf", flashvars, params, attributes);
+	//swfobject.embedSWF("swf/AI_Loader.swf", "ai-container", flashvars.width, flashvars.height, "11.2", "expressInstall.swf", flashvars, params, attributes);
+	swfobject.embedSWF(flashvars.ai, "ai-container", flashvars.width, flashvars.height, "11.2", "expressInstall.swf", flashvars, params, attributes);
 	
 }
 

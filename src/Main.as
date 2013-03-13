@@ -57,7 +57,7 @@
 		
 		private var ordem:Array = [1, 1, 2, 3, 2, 3, 1, 3, 2, 1, 3, 2, 2, 3, 3, 2];
 		private var index:int = 0;
-		private var forma:int = 1;
+		private var forma:String = "1";
 		
 		public function Main() 
 		{
@@ -67,7 +67,7 @@
 		override protected function init():void 
 		{
 			if (root.loaderInfo.parameters["forma"]) {
-				forma = int(root.loaderInfo.parameters["forma"]);
+				forma = root.loaderInfo.parameters["forma"];
 			}
 			
 			var rollText:RollText = new RollText();
@@ -541,7 +541,7 @@
 			//debug.text += "\nn: " + n;
 			//debug.text += "\nE: " + E;
 			
-			if (forma == 1) equacao.text = "Indique a posição do vértice e das raízes (se houver) de s(t) = " + a + "t²" + (b >= 0?"+":"") + b + "t" + (c >= 0?"+":"") + c;
+			if (forma == "1") equacao.text = "Indique a posição do vértice e das raízes (se houver) de s(t) = " + a + "t²" + (b >= 0?"+":"") + b + "t" + (c >= 0?"+":"") + c;
 			else equacao.text = "Indique a posição do vértice e das raízes (se houver) de s(t) = " + a + "(t" + (xv >= 0?"-" + xv:"+" + Math.abs(xv)) + ")²" + (yv >= 0?"+":"") + yv;
 			
 			resposta.x0 = x0;
