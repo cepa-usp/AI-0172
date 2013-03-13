@@ -66,10 +66,10 @@
 		
 		override protected function init():void 
 		{
-			if (root.loaderInfo.parameters["forma"]) {
+			if (root.loaderInfo.parameters["forma"] != null && root.loaderInfo.parameters["forma"] != "") {
 				forma = root.loaderInfo.parameters["forma"];
 			}
-			
+			trace(forma);
 			var rollText:RollText = new RollText();
 			orientacoesScreen.addChild(rollText);
 			rollText.x = -260;
@@ -541,7 +541,7 @@
 			//debug.text += "\nn: " + n;
 			//debug.text += "\nE: " + E;
 			
-			if (forma == "1") equacao.text = "Indique a posição do vértice e das raízes (se houver) de s(t) = " + a + "t²" + (b >= 0?"+":"") + b + "t" + (c >= 0?"+":"") + c;
+			if (forma != "2") equacao.text = "Indique a posição do vértice e das raízes (se houver) de s(t) = " + a + "t²" + (b >= 0?"+":"") + b + "t" + (c >= 0?"+":"") + c;
 			else equacao.text = "Indique a posição do vértice e das raízes (se houver) de s(t) = " + a + "(t" + (xv >= 0?"-" + xv:"+" + Math.abs(xv)) + ")²" + (yv >= 0?"+":"") + yv;
 			
 			resposta.x0 = x0;
