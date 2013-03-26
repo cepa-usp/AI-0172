@@ -472,8 +472,9 @@
 		{
 			if (func != null) graph.removeFunction(func);
 			
-			func = getFunction(ordem[index]);
-			resposta.caso = ordem[index];
+			var caso:int = ordem[index];
+			func = getFunction(caso);
+			resposta.caso = caso;
 			index++;
 			if (index >= ordem.length) index = 0;
 			
@@ -518,6 +519,8 @@
 					yv = 0;
 					xv = (Math.random() > 0.5 ? 1 : -1) * Math.floor(Math.random() * rangeInteiros);
 					a = (Math.random() > 0.5 ? 1 : -1) * Math.ceil(Math.random() * rangeInteiros);
+					x0 = xv;
+					x1 = xv;
 					break;
 				case 3:
 					xv = (Math.random() > 0.5 ? 1 : -1) * Math.floor(Math.random() * rangeInteiros);
@@ -636,11 +639,12 @@
 				
 				//Analisa as raízes:
 				var respostaRaizes:Array;
+				respostaRaizes = [new Point(resposta.x0, 0), new Point(resposta.x1, 0)];
 				var raiz1ok:Boolean = false;
 				var raiz2ok:Boolean = false;
 				switch(resposta.caso) {
 					case 1:
-						respostaRaizes = [new Point(resposta.x0, 0), new Point(resposta.x1, 0)];
+						//respostaRaizes = [new Point(resposta.x0, 0), new Point(resposta.x1, 0)];
 						if (pontosGrafico.length == 0) {
 							feed += "• Nenhuma das duas raízes foi indicada. Veja no plano cartesiano que o gráfico de s(t) cruza o eixo t duas vezes. Esses cruzamentos indicam as duas raízes.";
 						}else if (pontosGrafico.length == 1) {
@@ -731,7 +735,7 @@
 									if (Point.distance(respRaiz2, new Point(item2.xpos, item2.ypos)) < tolerancia) {
 										if(item2.related == pRaiz1) raiz1ok = true;
 										else raiz2ok = true;
-										respostaRaizes.splice(respostaRaizes.indexOf(respRaiz), 1);
+										respostaRaizes.splice(respostaRaizes.indexOf(respRaiz2), 1);
 										break lookRes3;
 									}
 									
